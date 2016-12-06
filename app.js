@@ -1,24 +1,25 @@
 var mongojs = require("mongojs");
-//var db = mongojs('localhost:27017/myGame', ['account','progress']);
-var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
-
-
+var db = mongojs('localhost:27017/myGame', ['account','progress']);
+//var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
+var io = require('socket.io')(serv,{}); //socket.io for easier client/server communication
 
+//load client/index.html at startup
 app.get('/',function(req, res) {
 	res.sendFile(__dirname + '/client/index.html');
 });
+//all static resources at /client
 app.use('/client',express.static(__dirname + '/client'));
 
-
+//port 8080 for local host or process.env.PORT for heroku deployment
 serv.listen(process.env.PORT || 8080);
 console.log("Server started.");
 
-var SOCKET_LIST = {};
+var sockets = {}; //global list of all socket connections
 
-var Entity = function(){
+var Entity = function(){ //encompass both player and bullet objects
 	var self = {
 		x:250,
 		y:250,
@@ -84,7 +85,7 @@ var Player = function(id){
 		else
 			self.spdY = 0;		
 	}
-	
+	//update initialization package for index.html
 	self.getInitPack = function(){
 		return {
 			id:self.id,
@@ -96,6 +97,7 @@ var Player = function(id){
 			score:self.score,
 		};		
 	}
+	//update update package for index.html
 	self.getUpdatePack = function(){
 		return {
 			id:self.id,
@@ -105,7 +107,7 @@ var Player = function(id){
 			score:self.score,
 		}	
 	}
-	
+	//add this object to Player.list
 	Player.list[id] = self;
 	
 	initPack.player.push(self.getInitPack());
@@ -128,7 +130,7 @@ Player.onConnect = function(socket){
 		else if(data.inputId === 'mouseAngle')
 			player.mouseAngle = data.state;
 	});
-	
+	//send emit event to client
 	socket.emit('init',{
 		selfId:socket.id,
 		player:Player.getAllInitPack(),
@@ -156,15 +158,15 @@ Player.update = function(){
 	return pack;
 }
 
-
+//constructor for bullet object
 var Bullet = function(parent,angle){
 	var self = Entity();
 	self.id = Math.random();
 	self.spdX = Math.cos(angle/180*Math.PI) * 10;
 	self.spdY = Math.sin(angle/180*Math.PI) * 10;
-	self.parent = parent;
+	self.parent = parent; //bullet owner
 	self.timer = 0;
-	self.toRemove = false;
+	self.toRemove = false; //flag for bullet state
 	var super_update = self.update;
 	self.update = function(){
 		if(self.timer++ > 100)
@@ -208,7 +210,7 @@ var Bullet = function(parent,angle){
 	return self;
 }
 Bullet.list = {};
-
+//sync bullet
 Bullet.update = function(){
 	var pack = [];
 	for(var i in Bullet.list){
@@ -230,7 +232,6 @@ Bullet.getAllInitPack = function(){
 	return bullets;
 }
 
-var DEBUG = true;
 
 var isValidPassword = function(data,cb){
 	db.account.find({username:data.username,password:data.password},function(err,res){
@@ -254,10 +255,9 @@ var addUser = function(data,cb){
 	});
 }
 
-var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
 	socket.id = Math.random();
-	SOCKET_LIST[socket.id] = socket;
+	sockets[socket.id] = socket;
 	
 	socket.on('signIn',function(data){
 		isValidPassword(data,function(res){
@@ -283,49 +283,35 @@ io.sockets.on('connection', function(socket){
 	
 	
 	socket.on('disconnect',function(){
-		delete SOCKET_LIST[socket.id];
+		delete sockets[socket.id];
 		Player.onDisconnect(socket);
 	});
-	socket.on('sendMsgToServer',function(data){
-		var playerName = ("" + socket.id).slice(2,7);
-		for(var i in SOCKET_LIST){
-			SOCKET_LIST[i].emit('addToChat',playerName + ': ' + data);
-		}
-	});
-	
-	socket.on('evalServer',function(data){
-		if(!DEBUG)
-			return;
-		var res = eval(data);
-		socket.emit('evalAnswer',res);		
-	});
-	
-	
+
 	
 });
 
 var initPack = {player:[],bullet:[]};
 var removePack = {player:[],bullet:[]};
 
-
+//built-in nodejs timer function, callback function will be called every 40 ms
 setInterval(function(){
 	var pack = {
 		player:Player.update(),
 		bullet:Bullet.update(),
 	}
 	
-	for(var i in SOCKET_LIST){
-		var socket = SOCKET_LIST[i];
+	for(var i in sockets){
+		var socket = sockets[i];
 		socket.emit('init',initPack);
 		socket.emit('update',pack);
 		socket.emit('remove',removePack);
 	}
+	//reset all packages
 	initPack.player = [];
 	initPack.bullet = [];
 	removePack.player = [];
 	removePack.bullet = [];
-	
-},1000/25);
+},40);
 
 
 
