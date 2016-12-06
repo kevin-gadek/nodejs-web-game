@@ -1,5 +1,6 @@
 var mongojs = require("mongojs");
-var db = mongojs('ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
+//var db = mongojs('localhost:27017/myGame', ['account','progress']);
+var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
 
 var express = require('express');
 var app = express();
