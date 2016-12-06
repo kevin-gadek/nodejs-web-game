@@ -1,6 +1,6 @@
 var mongojs = require("mongojs");
-//var db = mongojs('localhost:27017/myGame', ['account','progress']);
-var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
+var db = mongojs('localhost:27017/myGame', ['account','progress']);
+//var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
@@ -43,7 +43,6 @@ var Entity = function(){ //encompass both player and bullet objects
 var Player = function(id){
 	var self = Entity();
 	self.id = id;
-	self.number = "" + Math.floor(10 * Math.random());
 	self.pressingRight = false;
 	self.pressingLeft = false;
 	self.pressingUp = false;
@@ -90,8 +89,7 @@ var Player = function(id){
 		return {
 			id:self.id,
 			x:self.x,
-			y:self.y,	
-			number:self.number,	
+			y:self.y,		
 			hp:self.hp,
 			hpMax:self.hpMax,
 			score:self.score,
