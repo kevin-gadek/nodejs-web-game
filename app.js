@@ -13,6 +13,7 @@ app.get('/',function(req, res) {
 //all static resources at /client
 app.use('/client',express.static(__dirname + '/client'));
 
+
 //port 8080 for local host or process.env.PORT for heroku deployment
 serv.listen(process.env.PORT || 8080);
 console.log("Server started.");
