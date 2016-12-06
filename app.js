@@ -1,8 +1,9 @@
+var mongojs = require("mongojs");
+var db = mongojs('localhost:27017/myGame', ['account','progress']);
+
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
-var mongojs = require("mongojs");
-var db = mongojs('localhost:27017/myGame', ['account','progress']);
 
 app.get('/',function(req, res) {
 	res.sendFile(__dirname + '/client/index.html');
@@ -10,9 +11,9 @@ app.get('/',function(req, res) {
 app.use('/client',express.static(__dirname + '/client'));
 
 serv.listen(process.env.PORT || 8080);
-console.log("Server started at port 8080.");
+console.log("Server started.");
 
-var sockets = {};
+var SOCKET_LIST = {};
 
 var Entity = function(){
 	var self = {
@@ -226,6 +227,7 @@ Bullet.getAllInitPack = function(){
 	return bullets;
 }
 
+var DEBUG = true;
 
 var isValidPassword = function(data,cb){
 	db.account.find({username:data.username,password:data.password},function(err,res){
@@ -252,7 +254,7 @@ var addUser = function(data,cb){
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
 	socket.id = Math.random();
-	sockets[socket.id] = socket;
+	SOCKET_LIST[socket.id] = socket;
 	
 	socket.on('signIn',function(data){
 		isValidPassword(data,function(res){
@@ -277,25 +279,40 @@ io.sockets.on('connection', function(socket){
 	});
 	
 	
-	socket.on('disconnect',function(){ //disconnect event
-		delete sockets[socket.id];
-		Player.onDisconnect(socket); //remove player from player list that has same socket id
+	socket.on('disconnect',function(){
+		delete SOCKET_LIST[socket.id];
+		Player.onDisconnect(socket);
 	});
-
+	socket.on('sendMsgToServer',function(data){
+		var playerName = ("" + socket.id).slice(2,7);
+		for(var i in SOCKET_LIST){
+			SOCKET_LIST[i].emit('addToChat',playerName + ': ' + data);
+		}
+	});
+	
+	socket.on('evalServer',function(data){
+		if(!DEBUG)
+			return;
+		var res = eval(data);
+		socket.emit('evalAnswer',res);		
+	});
+	
+	
+	
 });
 
 var initPack = {player:[],bullet:[]};
 var removePack = {player:[],bullet:[]};
 
-//nodejs built-in timer function to regularly update
+
 setInterval(function(){
 	var pack = {
 		player:Player.update(),
 		bullet:Bullet.update(),
 	}
 	
-	for(var i in sockets){
-		var socket = sockets[i];
+	for(var i in SOCKET_LIST){
+		var socket = SOCKET_LIST[i];
 		socket.emit('init',initPack);
 		socket.emit('update',pack);
 		socket.emit('remove',removePack);
@@ -305,7 +322,7 @@ setInterval(function(){
 	removePack.player = [];
 	removePack.bullet = [];
 	
-},50);
+},1000/25);
 
 
 

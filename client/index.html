@@ -1,18 +1,39 @@
 <!DOCTYPE html>
+<html>
 <head>
-<title>PvP shooter</title>
-<link rel="stylesheet" type="text/css" href="css/style.css">
+<title>Pea Shooter</title>
+<style>
+	.login { 
+	height:140px;
+	width:190px;
+	margin:auto;
+	border:1px #CCC solid;
+	padding:10px;
+}
+
+.login input { 
+	padding:5px;
+	margin:5px
+ }
+ 
+.canvas{
+	margin:auto;
+	border: 3px solid #000000;
+	padding: 10px;
+ }
+</style>
 </head>
-<div id="signDiv">
+
+<div id="signDiv" class="login">
 	Username: <input id="signDiv-username" type="text"></input><br>
 	Password: <input id="signDiv-password" type="password"></input>
 	<button id="signDiv-signIn">Sign In</button>
 	<button id="signDiv-signUp">Sign Up</button>
 </div>
 
-<div id="gameDiv" style="display:none;">
-	<canvas id="ctx" width="500" height="500" style="border:1px solid #000000"></canvas>
-
+<div id="gameDiv" style="display:none;" class="canvas" id="canvas">
+	<canvas id="ctx" width="1000" height="1000" style="border:1px solid #000000;"></canvas>
+	
 </div>
 
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
@@ -39,17 +60,15 @@
 			signDiv.style.display = 'none';
 			gameDiv.style.display = 'inline-block';
 		} else
-			alert("Login failed.");
+			alert("Sign in failed.");
 	});
 	socket.on('signUpResponse',function(data){
 		if(data.success){
-			alert("User registered.");
+			alert("Registration succeeded.");
 		} else
-			alert("Registration Failed.");
+			alert("Registration failed.");
 	});
 
-	
-	
 	//game
 	var Img = {};
 	Img.player = new Image();
@@ -57,7 +76,7 @@
 	Img.bullet = new Image();
 	Img.bullet.src = '/client/img/beam.png';
 	Img.map = new Image();
-	Img.map.src = '/client/img/map.png';
+	Img.map.src = '/client/img/space.jpg';
 	
 	var ctx = document.getElementById("ctx").getContext("2d");
 	ctx.font = '30px Arial';
@@ -80,8 +99,8 @@
 			ctx.fillStyle = 'red';
 			ctx.fillRect(x - hpWidth/2,y - 40,hpWidth,4);
 			
-			var width = Img.player.width*2;
-			var height = Img.player.height*2;
+			var width = Img.player.width;
+			var height = Img.player.height;
 			
 			
 			ctx.drawImage(Img.player,
@@ -179,7 +198,7 @@
 			return;
 		ctx.clearRect(0,0,500,500);
 		drawMap();
-		//drawScore();
+		drawScore();
 		for(var i in Player.list)
 			Player.list[i].draw();
 		for(var i in Bullet.list)
@@ -189,7 +208,7 @@
 	var drawMap = function(){
 		var x = WIDTH/2 - Player.list[selfId].x;
 		var y = HEIGHT/2 - Player.list[selfId].y;
-		ctx.drawImage(Img.map,x,y);
+		ctx.drawImage(Img.map,x,y, Img.map.width *0.9, Img.map.width * 0.9);
 	}
 	
 	var drawScore = function(){
@@ -236,8 +255,8 @@
 	
 	
 </script>
-
 </html>
+
 
 
 
