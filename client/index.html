@@ -25,10 +25,10 @@
 </head>
 
 <div id="signDiv" class="login">
-	Username: <input id="signDiv-username" type="text"></input><br>
-	Password: <input id="signDiv-password" type="password"></input>
-	<button id="signDiv-signIn">Sign In</button>
-	<button id="signDiv-signUp">Sign Up</button>
+	Username: <input id="user" type="text"></input><br>
+	Password: <input id="pass" type="password"></input>
+	<button id="signIn">Sign In</button>
+	<button id="signUp">Sign Up</button>
 </div>
 
 <div id="gameDiv" style="display:none;" class="canvas" id="canvas">
@@ -42,21 +42,24 @@
 	var HEIGHT = 500;
 	var socket = io();
 	
-	//sign
+	//login scripts
 	var signDiv = document.getElementById('signDiv');
-	var signDivUsername = document.getElementById('signDiv-username');
-	var signDivSignIn = document.getElementById('signDiv-signIn');
-	var signDivSignUp = document.getElementById('signDiv-signUp');
-	var signDivPassword = document.getElementById('signDiv-password');
+	var signDivUsername = document.getElementById('user');
+	var signDivSignIn = document.getElementById('signIn');
+	var signDivSignUp = document.getElementById('signUp');
+	var signDivPassword = document.getElementById('pass');
 	
+	//on submit send signIn event to server
 	signDivSignIn.onclick = function(){
 		socket.emit('signIn',{username:signDivUsername.value,password:signDivPassword.value});
 	}
 	signDivSignUp.onclick = function(){
 		socket.emit('signUp',{username:signDivUsername.value,password:signDivPassword.value});
 	}
+	//server sends confirmation of signIn
 	socket.on('signInResponse',function(data){
 		if(data.success){
+			//hide login page and display game canvas
 			signDiv.style.display = 'none';
 			gameDiv.style.display = 'inline-block';
 		} else
@@ -69,7 +72,7 @@
 			alert("Registration failed.");
 	});
 
-	//game
+	//client-side game logic
 	var Img = {};
 	Img.player = new Image();
 	Img.player.src = '/client/img/ufo.png';
@@ -142,11 +145,10 @@
 	Bullet.list = {};
 	
 	var selfId = null;
-
+	//init
 	socket.on('init',function(data){	
 		if(data.selfId)
 			selfId = data.selfId;
-		//{ player : [{id:123,number:'1',x:0,y:0},{id:1,number:'2',x:0,y:0}], bullet: []}
 		for(var i = 0 ; i < data.player.length; i++){
 			new Player(data.player[i]);
 		}
@@ -154,9 +156,8 @@
 			new Bullet(data.bullet[i]);
 		}
 	});
-	
+	//update
 	socket.on('update',function(data){
-		//{ player : [{id:123,x:0,y:0},{id:1,x:0,y:0}], bullet: []}
 		for(var i = 0 ; i < data.player.length; i++){
 			var pack = data.player[i];
 			var p = Player.list[pack.id];
@@ -182,9 +183,8 @@
 			}
 		}
 	});
-	
+	//remove
 	socket.on('remove',function(data){
-		//{player:[12323],bullet:[12323,123123]}
 		for(var i = 0 ; i < data.player.length; i++){
 			delete Player.list[data.player[i]];
 		}
@@ -196,13 +196,13 @@
 	setInterval(function(){
 		if(!selfId)
 			return;
-		ctx.clearRect(0,0,500,500);
-		drawMap();
-		drawScore();
+		ctx.clearRect(0,0,500,500); //reset canvas
+		drawMap(); //redraw map
+		drawScore(); //update score
 		for(var i in Player.list)
-			Player.list[i].draw();
+			Player.list[i].draw(); //redraw each player
 		for(var i in Bullet.list)
-			Bullet.list[i].draw();
+			Bullet.list[i].draw(); //redraw every bullet
 	},40);
 	
 	var drawMap = function(){
@@ -217,38 +217,39 @@
 	}
 	
 	document.onkeydown = function(event){
-		if(event.keyCode === 68 || event.keyCode == 39)	//d
+		if(event.keyCode === 68 || event.keyCode == 39)	//d or right
 			socket.emit('keyPress',{inputId:'right',state:true});
-		else if(event.keyCode === 83)	//s
+		else if(event.keyCode === 83 || event.keyCode == 40)	//s or down
 			socket.emit('keyPress',{inputId:'down',state:true});
-		else if(event.keyCode === 65) //a
+		else if(event.keyCode === 65 || event.keyCode == 37) //a or left
 			socket.emit('keyPress',{inputId:'left',state:true});
-		else if(event.keyCode === 87) // w
+		else if(event.keyCode === 87 || event.keyCode == 38) // w or up
 			socket.emit('keyPress',{inputId:'up',state:true});
 			
 	}
 	document.onkeyup = function(event){
 		if(event.keyCode === 68 || event.keyCode == 39)	//d or right
 			socket.emit('keyPress',{inputId:'right',state:false});
-		else if(event.keyCode === 83)	//s
+		else if(event.keyCode === 83 || event.keyCode == 40)	//s or down
 			socket.emit('keyPress',{inputId:'down',state:false});
-		else if(event.keyCode === 65) //a
+		else if(event.keyCode === 65 || event.keyCode == 37) //a or left
 			socket.emit('keyPress',{inputId:'left',state:false});
-		else if(event.keyCode === 87) // w
+		else if(event.keyCode === 87 || event.keyCode == 38) // w or up
 			socket.emit('keyPress',{inputId:'up',state:false});
 	}
-	
+	//right click or left click 
 	document.onmousedown = function(event){
 		socket.emit('keyPress',{inputId:'attack',state:true});
 	}
 	document.onmouseup = function(event){
 		socket.emit('keyPress',{inputId:'attack',state:false});
 	}
+	
 	document.onmousemove = function(event){
 		var x = -250 + event.clientX - 8;
 		var y = -250 + event.clientY - 8;
-		var angle = Math.atan2(y,x) / Math.PI * 180;
-		socket.emit('keyPress',{inputId:'mouseAngle',state:angle});
+		var angle = Math.atan2(y,x) / Math.PI * 180; //magic, just magic
+		socket.emit('keyPress',{inputId:'mouseAngle',state:angle}); //tell server the new angle
 	}
 	
 	

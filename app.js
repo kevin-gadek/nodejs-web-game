@@ -169,10 +169,11 @@ var Bullet = function(parent,angle){
 	self.toRemove = false; //flag for bullet state
 	var super_update = self.update;
 	self.update = function(){
+		//remove bullets after 100 frames (40 ms each)
 		if(self.timer++ > 100)
 			self.toRemove = true;
 		super_update();
-		
+		//check for hits
 		for(var i in Player.list){
 			var p = Player.list[i];
 			if(self.getDistance(p) < 32 && self.parent !== p.id){
@@ -232,7 +233,7 @@ Bullet.getAllInitPack = function(){
 	return bullets;
 }
 
-
+//check if password matches database entry
 var isValidPassword = function(data,cb){
 	db.account.find({username:data.username,password:data.password},function(err,res){
 		if(res.length > 0)
@@ -241,6 +242,7 @@ var isValidPassword = function(data,cb){
 			cb(false);
 	});
 }
+//check if given username matches any in db
 var isUsernameTaken = function(data,cb){
 	db.account.find({username:data.username},function(err,res){
 		if(res.length > 0)
@@ -249,6 +251,7 @@ var isUsernameTaken = function(data,cb){
 			cb(false);
 	});
 }
+//insert user into database
 var addUser = function(data,cb){
 	db.account.insert({username:data.username,password:data.password},function(err){
 		cb();
