@@ -2,46 +2,93 @@
 <html>
 <head>
 <title>Pea Shooter</title>
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 <style>
-	.login { 
-	height:140px;
-	width:190px;
-	margin:auto;
-	border:1px #CCC solid;
-	padding:10px;
+body {
+    background:#333;
+}
+.form_bg {
+    background-color:#eee;
+    color:#666;
+    padding:20px;
+    border-radius:10px;
+    position: absolute;
+    border:1px solid #fff;
+    margin: auto;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 320px;
+    height: 280px;
 }
 
-.login input { 
-	padding:5px;
-	margin:5px
+.align-center {
+    display: inline-block;
+	margin-right:5px;
+}
+.buttons {
+	text-align: center;
+}
+ 
+ canvas {
+	border: 1px solid #000000;
+	padding: 0;
+	margin: auto;
+	display: block;
+	position: absolute;
+	top:0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 10px;
  }
  
 .canvas{
-	margin:auto;
-	border: 3px solid #000000;
-	padding: 10px;
+	max-width: 100%;
+	max-height: 100%;
  }
 </style>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
 </head>
 
-<div id="signDiv" class="login">
-	Username: <input id="user" type="text"></input><br>
-	Password: <input id="pass" type="password"></input>
-	<button id="signIn">Sign In</button>
-	<button id="signUp">Sign Up</button>
+<body>
+
+<div id="signDiv" class="container">
+    <div  class="row">
+        <div class="form_bg">
+                 <h2 class="text-center">Login Page</h2>
+                <br/>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="user" placeholder="User id">
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" id="pass" placeholder="Password">
+                </div>
+                <br/>
+				<div class="buttons">
+                <div class="align-center">
+                    <button class="btn btn-default" id="signIn">Login</button>
+                </div>
+				<div class="align-center">
+                    <button class="btn btn-default" id="signUp">Register</button>
+                </div>
+				</div>
+        </div>
+    </div>
 </div>
 
-<div id="gameDiv" style="display:none;" class="canvas" id="canvas">
-	<canvas id="ctx" width="1000" height="900" style="border:1px solid #000000;"></canvas>
+
+<div id="gameDiv" style="display:none;">
+	<canvas id="ctx" class = "canvas" width="1000" height="900" style="border:1px solid #000000;"></canvas>
 	
 </div>
-
+</body>
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
 	var WIDTH = 500;
 	var HEIGHT = 500;
 	var socket = io();
-	
 	//login scripts
 	var signDiv = document.getElementById('signDiv');
 	var signDivUsername = document.getElementById('user');
@@ -60,7 +107,7 @@
 	socket.on('signInResponse',function(data){
 		if(data.success){
 			//hide login page and display game canvas
-			signDiv.style.display = 'none';
+			signDiv.style.display = 'none !important';
 			gameDiv.style.display = 'inline-block';
 		} else
 			alert("Sign in failed.");
@@ -81,7 +128,7 @@
 	Img.map = new Image();
 	Img.map.src = '/client/img/space.jpg';
 	
-	var ctx = document.getElementById("ctx").getContext("2d");
+	var ctx = document.getElementById("ctx").getContext("2d"); 
 	ctx.font = '30px Arial';
 	
 	var Player = function(initPack){

@@ -1,6 +1,8 @@
 var mongojs = require("mongojs");
-//var db = mongojs('localhost:27017/myGame', ['account','progress']);
-var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
+var db = mongojs('localhost:27017/myGame', ['account','progress']);
+//need to fix login/register page with bootstrap
+//should do hashing with mongodb
+//var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
@@ -20,7 +22,7 @@ console.log("Server started.");
 
 var sockets = {}; //global list of all socket connections
 
-var Entity = function(){ //encompass both player and bullet objects
+var Entity = function(){ //encompass both player and bullet objects in entity constructor
 	var self = {
 		x:250,
 		y:250,
@@ -40,7 +42,7 @@ var Entity = function(){ //encompass both player and bullet objects
 	}
 	return self;
 }
-
+//Player constructor
 var Player = function(id){
 	var self = Entity();
 	self.id = id;
@@ -88,6 +90,7 @@ var Player = function(id){
 	//update initialization package for index.html
 	self.getInitPack = function(){
 		return {
+			object_id:self.object_id,
 			id:self.id,
 			x:self.x,
 			y:self.y,		
@@ -113,6 +116,7 @@ var Player = function(id){
 	return self;
 }
 Player.list = {};
+//init onConnect method that creates new instance of player tied to socket.id, also calls init event to client through socket.emit
 Player.onConnect = function(socket){
 	var player = Player(socket.id);
 	socket.on('keyPress',function(data){
@@ -136,17 +140,20 @@ Player.onConnect = function(socket){
 		bullet:Bullet.getAllInitPack(),
 	})
 }
+
 Player.getAllInitPack = function(){
 	var players = [];
 	for(var i in Player.list)
 		players.push(Player.list[i].getInitPack());
 	return players;
 }
-
+//delete pack for disconnected player
 Player.onDisconnect = function(socket){
 	delete Player.list[socket.id];
 	removePack.player.push(socket.id);
 }
+
+//update update package for each player in Player.list
 Player.update = function(){
 	var pack = [];
 	for(var i in Player.list){
@@ -180,8 +187,9 @@ var Bullet = function(parent,angle){
 								
 				if(p.hp <= 0){
 					var shooter = Player.list[self.parent];
-					if(shooter)
+					if(shooter){
 						shooter.score += 1;
+					}
 					p.hp = p.hpMax;
 					p.x = Math.random() * 500;
 					p.y = Math.random() * 500;					
@@ -256,7 +264,7 @@ var addUser = function(data,cb){
 		cb();
 	});
 }
-
+//socket interface
 io.sockets.on('connection', function(socket){
 	socket.id = Math.random();
 	sockets[socket.id] = socket;
@@ -266,8 +274,12 @@ io.sockets.on('connection', function(socket){
 			if(res){
 				Player.onConnect(socket);
 				socket.emit('signInResponse',{success:true});
+				//console.log(data.username);
+				//console.log("Success");
 			} else {
-				socket.emit('signInResponse',{success:false});			
+				socket.emit('signInResponse',{success:false});
+				//console.log(data.username);
+				//console.log("Failure");
 			}
 		});
 	});
