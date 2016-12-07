@@ -7,7 +7,6 @@ var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
 var io = require('socket.io')(serv,{}); //socket.io for easier client/server communication
-
 //load client/index.html at startup
 app.get('/',function(req, res) {
 	res.sendFile(__dirname + '/client/index.html');
