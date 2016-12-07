@@ -1,12 +1,13 @@
 var mongojs = require("mongojs");
-var db = mongojs('localhost:27017/myGame', ['account','progress']);
+//var db = mongojs('localhost:27017/myGame', ['account','progress']);
 //need to fix login/register page with bootstrap
 //should do hashing with mongodb
-//var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
+var db = mongojs('mongodb://admin:123@ds127428.mlab.com:27428/heroku_dg7l32hd', ['account','progress']);
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
 var io = require('socket.io')(serv,{}); //socket.io for easier client/server communication
+
 
 //load client/index.html at startup
 app.get('/',function(req, res) {
